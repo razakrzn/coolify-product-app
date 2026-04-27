@@ -16,6 +16,15 @@ const pool = new Pool({
     : false,
 });
 
+const PRODUCT_SELECT_FIELDS = `
+  id,
+  name,
+  price::float8 AS price,
+  category,
+  stock,
+  created_at
+`;
+
 // Create table + seed data on startup
 async function initDB() {
   const client = await pool.connect();
@@ -65,7 +74,7 @@ app.get('/health', async (req, res) => {
 // GET all products
 app.get('/api/products', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM products ORDER BY id');
+    const { rows } = await pool.query(`SELECT ${PRODUCT_SELECT_FIELDS} FROM products ORDER BY id`);
     res.json(rows);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -75,7 +84,7 @@ app.get('/api/products', async (req, res) => {
 // GET single product
 app.get('/api/products/:id', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
+    const { rows } = await pool.query(`SELECT ${PRODUCT_SELECT_FIELDS} FROM products WHERE id = $1`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Product not found' });
     res.json(rows[0]);
   } catch (e) {
@@ -91,7 +100,9 @@ app.post('/api/products', async (req, res) => {
   }
   try {
     const { rows } = await pool.query(
-      'INSERT INTO products (name, price, category, stock) VALUES ($1, $2, $3, $4) RETURNING *',
+      `INSERT INTO products (name, price, category, stock)
+       VALUES ($1, $2, $3, $4)
+       RETURNING ${PRODUCT_SELECT_FIELDS}`,
       [name, parseFloat(price), category, parseInt(stock) || 0]
     );
     res.status(201).json(rows[0]);

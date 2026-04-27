@@ -7,6 +7,17 @@ const categoryColors = {
   Accessories: { bg: '#fef3e8', text: '#a85c1a', dot: '#FF9800' },
 }
 
+const toNumber = (value, fallback = 0) => {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
+const normalizeProduct = (product) => ({
+  ...product,
+  price: toNumber(product.price),
+  stock: Math.trunc(toNumber(product.stock)),
+})
+
 export default function App() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -28,7 +39,7 @@ export default function App() {
       const res = await fetch(`${API}/products`)
       if (!res.ok) throw new Error('Failed to fetch')
       const data = await res.json()
-      setProducts(data)
+      setProducts(Array.isArray(data) ? data.map(normalizeProduct) : [])
       setError(null)
     } catch (e) {
       setError('Cannot connect to API. Is the backend running?')
@@ -46,10 +57,15 @@ export default function App() {
       const res = await fetch(`${API}/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({
+          ...form,
+          price: toNumber(form.price),
+          stock: Math.trunc(toNumber(form.stock)),
+        })
       })
+      if (!res.ok) throw new Error('Failed to add product')
       const data = await res.json()
-      setProducts(prev => [...prev, data])
+      setProducts(prev => [...prev, normalizeProduct(data)])
       setForm({ name: '', price: '', category: 'Electronics', stock: '' })
       setShowForm(false)
       showToast('Product added!')
@@ -63,7 +79,8 @@ export default function App() {
   const handleDelete = async (id) => {
     setDeleting(id)
     try {
-      await fetch(`${API}/products/${id}`, { method: 'DELETE' })
+      const res = await fetch(`${API}/products/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete product')
       setProducts(prev => prev.filter(p => p.id !== id))
       showToast('Product removed')
     } catch {
@@ -73,7 +90,7 @@ export default function App() {
     }
   }
 
-  const totalValue = products.reduce((sum, p) => sum + p.price * p.stock, 0)
+  const totalValue = products.reduce((sum, p) => sum + toNumber(p.price) * toNumber(p.stock), 0)
 
   return (
     <div style={styles.root}>
@@ -101,7 +118,7 @@ export default function App() {
         <div style={styles.stats}>
           {[
             { label: 'Total Products', value: products.length },
-            { label: 'Total Stock', value: products.reduce((s, p) => s + p.stock, 0) },
+            { label: 'Total Stock', value: products.reduce((s, p) => s + toNumber(p.stock), 0) },
             { label: 'Inventory Value', value: `$${totalValue.toFixed(2)}` },
             { label: 'Categories', value: [...new Set(products.map(p => p.category))].length },
           ].map(s => (
@@ -183,7 +200,7 @@ export default function App() {
                   <div style={styles.productId}>#{p.id}</div>
                   <h3 style={styles.productName}>{p.name}</h3>
                   <div style={styles.cardBottom}>
-                    <span style={styles.price}>${p.price.toFixed(2)}</span>
+                    <span style={styles.price}>${toNumber(p.price).toFixed(2)}</span>
                     <span style={{ ...styles.stockBadge, color: p.stock < 20 ? '#e74c3c' : '#27ae60' }}>
                       {p.stock} in stock
                     </span>
