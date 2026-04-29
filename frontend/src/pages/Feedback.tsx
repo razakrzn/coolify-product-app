@@ -8,14 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { API_BASE_URL } from "@/config";
 
 interface FeedbackFormData {
     name: string;
     email: string;
     feedback: string;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const Feedback = () => {
     const [loading, setLoading] = useState(false);
