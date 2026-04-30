@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { MessageSquare, User, Mail, Upload, Send, Loader2, Image as ImageIcon, X } from "lucide-react";
+import { MessageSquare, User, Mail, Upload, Send, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,7 +19,6 @@ interface FeedbackFormData {
 const Feedback = () => {
     const [loading, setLoading] = useState(false);
     const [image, setImage] = useState<string | null>(null);
-    const [imageFile, setImageFile] = useState<File | null>(null);
     const { register, handleSubmit, reset, formState: { errors } } = useForm<FeedbackFormData>();
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,7 +28,6 @@ const Feedback = () => {
                 toast.error("Image size should be less than 5MB");
                 return;
             }
-            setImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImage(reader.result as string);
@@ -40,7 +38,6 @@ const Feedback = () => {
 
     const removeImage = () => {
         setImage(null);
-        setImageFile(null);
     };
 
     const onSubmit = async (data: FeedbackFormData) => {
